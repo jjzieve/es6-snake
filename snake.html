@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+    	<meta charset="utf-8">
+    	<title>Sandbox</title>
+    </head>
+    <body>
+        <svg width="500px" height="500px" id="game-container" xmlns="http://www.w3.org/2000/svg"/></svg>
+    </body>
+    <script>
+        const BLOCK_SIZE = 25;
+        const GAME_CONTAINER = document.getElementById("game-container");
+
+        const Segment = (initialX, initialY) => {
+            let next = null;
+            let previous = null;
+            let x = initialX;
+            let y = initialY;
+            let svg = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+                        svg.setAttribute("width", BLOCK_SIZE)
+                        svg.setAttribute("height", BLOCK_SIZE)
+                        svg.style = "stroke: #009900; stroke-width: 3; fill: none;";
+            return {
+                svg: svg,
+                previous: previous,
+                next: next,
+                x: x,
+                y: y,
+                // draw: () => {
+                //     // GAME_CONTAINER.removeChild(svg);
+                //     // console.log(x, y)
+                //     svg.setAttribute("x", x);
+                //     svg.setAttribute("y", y);
+                //     GAME_CONTAINER.appendChild(svg);
+                // },
+                
+            }
+        }
+        const Snake = () => {
+            let currentDirection = 'RIGHT';
+            let head = Segment(25,25);
+            let tail = head;
+            return {
+                head: head,
+                tail: head,
+                setDirection: (direction) => {
+                    currentDirection = direction;
+                },
+                push: (segment) => {
+                    let current = head;
+                    while(current.next){
+                        current = current.next;
+                    }
+                    segment.previous = current;
+                    current.next = segment;
+                    tail = segment;
+                },
+                draw: () => {
+                    let current = head;
+                    while(current.next){
+                        current.svg.setAttribute("x", current.x);
+                        current.svg.setAttribute("y", current.y);
+                        GAME_CONTAINER.appendChild(current.svg);
+                        current = current.next;
+                    }
+                    current.svg.setAttribute("x", current.x);
+                    current.svg.setAttribute("y", current.y);
+                    GAME_CONTAINER.appendChild(current.svg);
+                },
+                advance: () => {
+                    let current = tail;
+                    //Set all segments coords equal to their previous segment
+                    while(current.previous) {
+                        current.x = current.previous.x;
+                        current.y = current.previous.y;
+                        current = current.previous;
+                    }
+                    // increment/decrement head depending on direction
+                    switch(currentDirection){
+                        case "RIGHT":
+                            head.x += BLOCK_SIZE;
+                            break;
+                        case "LEFT":
+                            head.x -= BLOCK_SIZE;
+                            break;
+                        case "DOWN":
+                            console.log('down')
+                            head.y += BLOCK_SIZE;
+                            break;
+                        case "UP":
+                            head.y -= BLOCK_SIZE;
+                            break;
+                    }
+                }
+            }
+        }
+
+        let snake = Snake();
+        snake.push(Segment(25,50));
+        snake.push(Segment(0,50));
+
+        let board = [];
+        
+        let onTimerTick = () => {
+            snake.advance();
+            snake.draw();
+        }
+        let gameLoop = setInterval(onTimerTick, 300); // 33 milliseconds = ~ 30 frames per sec
+        let gameState = "RUNNING";
+        
+        document.onkeydown = (e) => {
+            e = e || window.event;
+            switch(e.keyCode){
+                case 37:
+                    snake.setDirection("LEFT");
+                    break;
+                case 38:
+                    snake.setDirection("UP");
+                    break;
+                case 39:
+                    snake.setDirection("RIGHT");
+                    break;
+                case 40:
+                    snake.setDirection("DOWN");
+                    break;
+                case 32: //SPACE bar
+                    gameState = (gameState === "PAUSED") ? "RUNNING" : "PAUSED";
+                    if (gameState === "PAUSED"){
+                        clearInterval(gameLoop);
+                    }
+                    else {
+                        gameLoop = setInterval(onTimerTick, 300); // 33 milliseconds = ~ 30 frames per sec
+                    }
+            }
+        };
+    </script>
+</html>
